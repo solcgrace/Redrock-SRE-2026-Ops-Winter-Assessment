@@ -202,3 +202,18 @@ main() {
 }
 
 main "$@"
+
+
+
+
+#自动检测的配置代码
+#!/bin/bash
+
+MAIN_SCRIPT="/root/setup.sh"
+LOG="/var/log/auto_check.log"
+echo "时间：$(date)" >> "$LOG"
+# 执行自动检测
+"$MAIN_SCRIPT" auto >> "$LOG" 2>&1
+
+echo "检测完成" >> "$LOG"
+echo "" >> "$LOG"
