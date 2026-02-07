@@ -1,0 +1,210 @@
+#主文件
+
+#!/bin/bash
+#1.所有的配置都直接命名就行，储存位置自己分配
+IP="172.22.146.150"
+NETMASK="255.255.255.0"
+GATEWAY="172.22.146.1"
+DNS1="172.22.146.53"
+DNS2="172.22.146.54"
+
+INTERFACE="eth0"
+
+LOG="/var/log/setup.log"
+
+#2.可以在主程序中添加使用方法弹出的限制条件，不太需要与其他的部分有逻辑关系
+show_help(){
+    echo "使用方法： $0 [命令]"
+    echo "命令列表："
+    echo "  dhcp    切换到办公室网络(自动获取IP)"
+    echo "  static  切换到生产网络(固定IP)"
+    echo "  isolate 配置生产网络隔离"
+    echo "  check   检查网络状态(禁止访问公网)"
+    echo "  backup  备份当前网络配置"
+    echo "  restore 恢复备份的网络配置"
+    echo ""
+    echo "示例："
+    echo "  $0 dhcp "
+    echo "  $0 static"
+}
+
+#3. 把日志写在前面，更便于后面代码的记录
+log(){
+    echo "[$(date '+%y-%m-%d %H：%M-：%S')] $1" >> "$LOG"
+    echo "$1"
+}
+
+check_root() {
+    if [ "$EUID" -ne 0]; then
+        echo "错误，请使用sudo或root运行"
+        exit 1
+    fi
+}
+
+#4.备份和恢复才可以让系统记住之前和现在的数据，脚本才可以重复执行、可回滚，并且要重启网络服务才可以重新开始；要创建文件储存数据
+backup_config(){
+    log "正在备份当前网络配置"
+    mkdir -p /backup/network
+    cp /etc/network/interfaces /backup/network/interfaces.backup
+    cp /etc/resolv.conf /backup/network/resolv.conf.backup
+    log "配置备份完成，保存在 /backup/network/"
+}
+
+restore_config() {
+    log "正在恢复网络配置"
+    if [ -f /backup/network/interfaces.backup ]; then
+        cp /backup/network/interfaces.backup /etc/network/interfaces
+    fi
+    if [ -f /backup/network/resolv.conf.backup ]; then
+        cp /backup/network/resolv.conf.backup /etc/resolv.conf
+    fi
+    systemctl restart networking
+    log "配置恢复完成"
+}
+
+#5.两种网络的配置都需要先备份，然后开始配置；使用回环接口  auto lo    iface lo inet loopback，可以让本机程序通过网络协议与自己通信，也可以确保本地网络服务正常工作；最后使用条件判断语句检查一下配置是否生效
+setup_dhcp(){
+    log "配置办公网络 (DHCP模式)"
+    backup_config
+    cat > /etc/network/interfaces << EOF
+auto lo
+iface lo inet loopback
+#办公网络 - DHCP模式
+auto $INTERFACE
+iface $INTERFACE inet dhcp
+EOF
+    systemctl restart networking
+    if ip addr show $INTERFACE | grep -q "inet"; then
+        log "办公网络配置成功！已启用DHCP"
+        log "当前IP地址: $(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}')"
+    else
+        log "警告: 网络配置可能未生效"
+    fi
+}
+
+setup_static() {
+    log "配置生产网络 (静态IP模式)"
+    backup_config
+    cat > /etc/network/interfaces << EOF
+auto lo
+iface lo inet loopback
+# 生产网络 - 静态IP模式
+auto $INTERFACE
+iface $INTERFACE inet static
+    address $IP
+    netmask $NETMASK
+    gateway $GATEWAY
+EOF
+
+    echo "nameserver $DNS1" > /etc/resolv.conf
+    echo "nameserver $DNS1" > /etc/resolv.conf
+
+    systemctl restart networking
+    # 检查配置是否生效
+    CURRENT_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+    if [ "$CURRENT_IP" = "$IP" ]; then
+        log "生产网络配置成功！"
+        log "IP地址: $CURRENT_IP"
+        log "网关: $GATEWAY"
+        log "DNS: $DNS1, $DNS2"
+    else
+        log "错误: IP地址配置失败"
+    fi
+}
+
+#6.设置防火墙规则，让生产网络只能访问内网，不能访问公网
+setup_isolation() {
+    log "配置生产网络隔离规则"
+    apt-get update && apt-get install -y iptables iptables-persistent 2>/dev/null
+    # 清除现有规则
+    iptables -F
+    iptables -X
+    # 设置默认策略
+    iptables -P INPUT ACCEPT
+    iptables -P FORWARD DROP
+    iptables -P OUTPUT DROP
+    # 允许本地回环
+    iptables -A OUTPUT -o lo -j ACCEPT
+    # 允许已建立的连接
+    iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    iptables -A OUTPUT -d 172.22.146.0/24 -j ACCEPT
+    iptables -A OUTPUT -d 172.16.0.0/12 -j ACCEPT
+    # 允许DNS查询
+    iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+    # 保存规则（Kali特有）
+    iptables-save > /etc/iptables/rules.v4
+    log "生产网络隔离配置完成"
+    log "允许访问: 172.22.146.0/24 和 172.16.0.0/12"
+    log "禁止访问: 公网地址"
+}
+
+#自动检测生产网络是否能访问公网并切换回办公网络
+auto_check() {
+    log "执行自动检测"
+    # 检查当前是否是生产网络
+    if grep -q "address $IP" /etc/network/interfaces 2>/dev/null; then
+        log "当前处于生产网络模式"
+        # 测试是否可以访问公网
+        if ping -c 2 -W 2 8.8.8.8 > /dev/null 2>&1; then
+            log "警告: 生产网络可以访问公网！正在切换回办公网络"
+            setup_dhcp
+            # 发送警告邮件
+            echo "生产网络违规访问公网，已自动切换到办公网络" | mail -s "网络违规警告" root@localhost 2>/dev/null
+        else
+            log "正常: 生产网络隔离有效"
+        fi
+    else
+        log "当前处于办公网络模式"
+    fi
+}
+
+main() {
+    check_root
+    touch "$LOG"
+    # 根据参数执行相应功能
+    case "$1" in
+        dhcp)
+            setup_dhcp
+            ;;
+        static)
+            setup_static
+            ;;
+        isolate)
+            setup_isolation
+            ;;
+        check)
+            check_network
+            ;;
+        backup)
+            backup_config
+            ;;
+        restore)
+            restore_config
+            ;;
+        auto)
+            auto_check
+            ;;
+        *)
+            show_help
+            exit 1
+            ;;
+    esac
+    log "操作完成"
+}
+
+main "$@"
+
+
+
+
+#自动检测的配置文件
+#!/bin/bash
+
+MAIN_SCRIPT="/root/setup.sh"
+LOG="/var/log/auto_check.log"
+echo "时间：$(date)" >> "$LOG"
+# 执行自动检测
+"$MAIN_SCRIPT" auto >> "$LOG" 2>&1
+
+echo "检测完成" >> "$LOG"
+echo "" >> "$LOG"
