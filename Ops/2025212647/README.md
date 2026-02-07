@@ -37,9 +37,9 @@
 方法一：直接下载使用
 ```bash
 # 下载主脚本
-wget https://raw.githubusercontent.com/solcgrace/operations/main/setup.sh
+wget https://raw.githubusercontent.com/solcgrace/network_tool/main/setup.sh
 # 下载自动检测脚本
-wget https://raw.githubusercontent.com/solcgrace/operations/main/auto_check.sh
+wget https://raw.githubusercontent.com/solcgrace/network_tool/main/auto_check.sh
 # 给予执行权限
 chmod +x setup.sh
 chmod +x auto_check.sh
@@ -50,7 +50,7 @@ sudo ./setup.sh --help
 方法二：完整安装
 ```bash
 # 克隆整个项目
-git clone https://github.com/solcgrace/operations.git
+git clone https://github.com/solcgrace/network_tool.git
 cd operations
 # 运行安装脚本（如果存在）
 sudo ./install.sh
@@ -61,3 +61,32 @@ sudo chmod +x /usr/local/bin/nwconfig
 
 
 ## 使用指南
+### 基本命令
+```bash
+# 查看帮助
+sudo nwconfig --help
+# 切换到办公网络（DHCP）
+sudo nwconfig dhcp
+# 切换到生产网络（静态IP）
+sudo nwconfig static
+# 配置生产网络隔离
+sudo nwconfig isolate
+# 检查网络状态
+sudo nwconfig check
+# 备份当前配置
+sudo nwconfig backup
+# 恢复备份配置
+sudo nwconfig restore
+```
+
+
+##  配置说明
+参数  |  值
+---- |  ----
+网卡  |  eth0
+IP地址  |  172.22.146.150
+子网掩码  |  255.255.255.0
+网段  |  172.22.146.0/24
+默认网关  |  172.22.146.1
+主DNS  |  172.22.146.53
+备DNS  |  172.22.146.54
