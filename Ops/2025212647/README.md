@@ -136,7 +136,7 @@ IP地址  |  172.22.146.150
 sudo nwconfig restore
 # 手动恢复特定文件
 sudo cp /backup/network/ifcfg-eth0.backup /etc/network/interfaces
-sudo systemct1 restart networking
+sudo systemctl restart networking
 ```
 
 
