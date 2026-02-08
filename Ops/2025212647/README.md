@@ -18,6 +18,9 @@
 
 
 ## 项目结构
+network_tool/
+├── setup.sh               # 主配置脚本
+├── auto_check.sh          # 自动检测脚本
 
 ## 功能特性
 - 日志记录
@@ -142,7 +145,12 @@ wget -O setup.sh.new https://raw.githubusercontent.com/solcgrace/network_tool/ma
 ```
 
 
-
+## 安全注意事项
+1.权限管理：脚本需要root权限，请谨慎使用
+2.网络隔离：生产网络隔离会阻止公网访问
+3.配置备份：重要操作前建议备份配置
+4.日志审查：定期检查日志文件
+5.测试验证：在生产环境使用前先测试
 
 
 
