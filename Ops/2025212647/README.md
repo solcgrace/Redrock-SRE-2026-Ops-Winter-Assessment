@@ -17,6 +17,8 @@
 这是一个能完成网络配置和验证工作的网络配置管理工具，用于在不同网络环境（办公网络/生产网络）之间的快速切换，并提供网络隔离和自动检测功能。
 
 
+## 项目结构
+
 ## 功能特性
 - 日志记录
 - 配置备份与恢复
@@ -104,18 +106,52 @@ IP地址  |  172.22.146.150
 ### 启用自动检测
 ```bash
 # 设置每分钟自动检测
-(crontab -l 2>/dev/null; echo "*/1 * * * /path/to/auto_network_check.sh") | crontab -
+(crontab -l 2>/dev/null; echo "*/1 * * * /path/to/auto_check.sh") | crontab -
 ```
 
 
 ## 日志管理
 ### 日志文件位置
-- 主日志：`/var/log/network_setup.log`
-- 自动检测日志：`/var/log/auto_network_check.log`
+- 主日志：`/var/log/setup.log`
+- 自动检测日志：`/var/log/auto_check.log`
 - 备份文件：`/backup/network/`
-## 网络隔离规则
-当启用生产网络隔离时，系统将配置以下防火墙规则：
-允许访问本地回环接口
-2. - [] 允许访问同一内网网段（172.22.146.0/24)
-3. - [] 允许已建立的连接
-4. - [] 禁止访问所有公网地址
+
+
+## 备份与恢复
+### 备份位置
+```bash
+/backup/network/
+├── ifcfg-eth0.backup      # 网络接口配置备份
+├── resolv.conf.backup     # DNS配置备份
+└── iptables.rules.backup  # 防火墙规则备份
+```
+### 恢复操作
+```bash
+# 从备份恢复所有配置
+sudo nwconfig restore
+# 手动恢复特定文件
+sudo cp /backup/network/ifcfg-eth0.backup /etc/network/interfaces
+sudo systemct1 restart networking
+```
+
+
+## 脚本更新
+```bash
+#从GitHub获取最新版本
+wget -O setup.sh.new https://raw.githubusercontent.com/solcgrace/network_tool/main/setup.sh
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
