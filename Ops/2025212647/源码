@@ -1,15 +1,13 @@
 #主文件
-
 #!/bin/bash
+
 #1.所有的配置都直接命名就行，储存位置自己分配
 IP="172.22.146.150"
 NETMASK="255.255.255.0"
 GATEWAY="172.22.146.1"
 DNS1="172.22.146.53"
 DNS2="172.22.146.54"
-
 INTERFACE="eth0"
-
 LOG="/var/log/setup.log"
 
 #2.可以在主程序中添加使用方法弹出的限制条件，不太需要与其他的部分有逻辑关系
@@ -33,7 +31,6 @@ log(){
     echo "[$(date '+%y-%m-%d %H：%M-：%S')] $1" >> "$LOG"
     echo "$1"
 }
-
 check_root() {
     if [ "$EUID" -ne 0]; then
         echo "错误，请使用sudo或root运行"
@@ -49,7 +46,6 @@ backup_config(){
     cp /etc/resolv.conf /backup/network/resolv.conf.backup
     log "配置备份完成，保存在 /backup/network/"
 }
-
 restore_config() {
     log "正在恢复网络配置"
     if [ -f /backup/network/interfaces.backup ]; then
@@ -81,7 +77,6 @@ EOF
         log "警告: 网络配置可能未生效"
     fi
 }
-
 setup_static() {
     log "配置生产网络 (静态IP模式)"
     backup_config
@@ -95,10 +90,8 @@ iface $INTERFACE inet static
     netmask $NETMASK
     gateway $GATEWAY
 EOF
-
     echo "nameserver $DNS1" > /etc/resolv.conf
     echo "nameserver $DNS1" > /etc/resolv.conf
-
     systemctl restart networking
     # 检查配置是否生效
     CURRENT_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
@@ -137,7 +130,6 @@ setup_isolation() {
     log "允许访问: 172.22.146.0/24 和 172.16.0.0/12"
     log "禁止访问: 公网地址"
 }
-
 #自动检测生产网络是否能访问公网并切换回办公网络
 auto_check() {
     log "执行自动检测"
