@@ -18,9 +18,11 @@
 
 
 ## 项目结构
+```text
 network_tool/
 ├── setup.sh               # 主配置脚本
 ├── auto_check.sh          # 自动检测脚本
+```
 
 ## 功能特性
 - 日志记录
