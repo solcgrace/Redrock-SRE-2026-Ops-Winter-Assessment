@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务状态 - SimpleMonitor</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>服务状态公开页</h1>
+        <nav>
+            <a href="/">仪表盘</a>
+            <a href="/status" class="active">公开状态</a>
+        </nav>
+    </header>
+    <main>
+        <section id="statusSummary">
+            <h2>当前状态概览</h2>
+            <div id="summaryCards" class="summary-grid"></div>
+        </section>
+        <section id="historyCharts">
+            <h2>24小时可用性</h2>
+            <div id="chartsContainer"></div>
+        </section>
+    </main>
+    <script src="/js/status.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+version: '3'
+services:
+  monitor:
+    build: .
+    container_name: simple-monitor
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - WEBHOOK_URL=
+      - QQ_BOT_URL=
+    cap_add:
+      - NET_RAW
+    restart: unless-stopped
