@@ -1,6 +1,10 @@
 # SimpleMonitor - 轻量级运维监控系统
 
-SimpleMonitor 是一个简单易用的自托管监控系统，灵感来自 Uptime Kuma，但更轻量、代码简洁。
+SimpleMonitor 是一个简单易用的自托管监控系统，灵感来自 Uptime Kuma，但更轻量、代码简洁。它支持 HTTP、TCP、Ping、DNS 监控，提供可视化仪表盘和公开状态页面，并支持 Webhook 和 QQ 机器人告警。
+
+## 代码仓库与Docker镜像
+- **代码仓库**：https://github.com/solcgrace/Redrock-SRE-2026-Ops-Winter-Assessment （项目位于 Dev/2025212647 子目录）
+- **Docker镜像**：docker pull solcgrace/simple-monitor:latest
 
 ## 功能特性
 
@@ -22,39 +26,40 @@ cd Redrock-SRE-2026-Ops-Winter-Assessment/Dev/2025212647
 docker-compose up -d
 ```
 访问`http://localhost:3000`进入仪表盘
-## 手动运行
 
+### 停止服务
 ```bash
+docker-compose down
+```
+
+
+## 手动运行
+```bash
+git clone https://github.com/solcgrace/Redrock-SRE-2026-Ops-Winter-Assessment.git
+cd Redrock-SRE-2026-Ops-Winter-Assessment/Dev/2025212647
 npm install
+mkdir data
 npm start
 ```
 
 ## 配置告警通知
 在`docker-compose.yml`中设置环境变量：
-
 - `WEBHOOK_URL`：通用 Webhook 地址（支持POST JSON）
-
 - `QQ_BOT_URL`：QQ机器人 API 地址，例如`http://192.168.1.100:5700/send_group_msg`
-
-重启容器生效。
+修改后重启容器生效：
+```bash
+docker-compose restart
+```
 
 ## 使用指南
-
 1.**添加监控项**：点击“添加监控项”，填写名称、类型、目标等。
-
 HTTP：目标为完整URL（如`https://example.com`）
-
 TCP：目标为`host:port`（如`google.com:80`）
-
 Ping：目标为域名或IP
-
 DNS：目标为域名
 2. **自定义阈值**：
-
 期望HTTP状态码：逗号分隔，如`200,302`
-
 响应时间阈值：毫秒，超过即告警
-
 3. **查看状态**：仪表盘显示每个监控项的最新状态和响应时间。公开状态页（`/status`）显示所有服务的概览和24小时可用性图表。
 
 ## 项目结构
